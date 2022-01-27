@@ -5,7 +5,7 @@ int gridSize;
 PImage map;
 
 color stone = #333333, bookshelf = #ffd000;
-PImage bookshelves, stones;
+PImage bookshelves, stones, sc, wood;
 
 Robot rbt;
 
@@ -16,6 +16,7 @@ boolean skipFrame;
 
 void setup() {
   fullScreen(P3D);
+
   smooth(4);
   textureMode(NORMAL);
   w = a = s = d = false;
@@ -24,7 +25,7 @@ void setup() {
   eyeY = height/2;
   focusY = height/2;
   eyeZ = 0;
-  focusZ = 10;
+  focusZ = 0;
   upX = 0;
   upY = -1;
   upZ = 0;
@@ -32,9 +33,12 @@ void setup() {
   map = loadImage("map1.png");
   bookshelves = loadImage("bookshelf.png");
   stones = loadImage("stone.png");
+  sc = loadImage("sc.png");
+  wood = loadImage("woodtop.png");
+
   gridSize = 100;
 
-  //h_head_angle = radians(270);
+  h_head_angle = radians(270);
 
   try {
     rbt = new Robot();
@@ -48,32 +52,39 @@ void setup() {
 
 void draw() {
   background(0);
+  ambientLight(255, 230, 200, width/2, height, width/2);
+  directionalLight(255, 255, 255, 0, 1, 0);
   camera(eyeX, eyeY, eyeZ, focusX, focusY, focusZ, upX, upY, upZ);
-  //drawAxis();
-  drawFocalPoint();
+
+  //drawFocalPoint();
   controlCamera();
   drawMap();
+  drawPlain();
 }
 
 void drawMap() {
   for (int x = 0; x < map.width; x++) {
     for (int y = 0; y < map.height; y++) {
       color c = map.get(x, y);
-      if (c != white) {
+
+      if (c == bookshelf) {
         pushMatrix();
-        if (c == bookshelf) {
-          for (int i = 0; i < height; i+=gridSize) 
-            block(x*gridSize, 0, y*gridSize, bookshelves, gridSize);
+        for (int i = 0; i < 2*gridSize; i+=gridSize) {
+          block(x*gridSize, i, y*gridSize, wood, bookshelves, wood, gridSize);
+          println(i);
         }
-        if (c == stone) {
-          for (int i = 0; i < height; i+=gridSize) 
-            block(x*gridSize, -height, y*gridSize, stones, gridSize);
-        }
-        if (c == black) {
-         fill(255);
-         translate(x*gridSize, 0, y*gridSize);
-         box(100, height, 100);
-        }
+        popMatrix();
+      }
+      if (c == stone) {
+        pushMatrix();
+        for (int i = 0; i < 5*gridSize; i+=gridSize)
+          block(x*gridSize, i, y*gridSize, stones, gridSize);
+        popMatrix();
+      }
+      if (c == black) {
+        pushMatrix();
+        for (int i = 0; i < height; i+=gridSize)
+          block(x*gridSize, i, y*gridSize, sc, gridSize);
         popMatrix();
       }
     }
@@ -87,20 +98,21 @@ void drawFocalPoint() {
   popMatrix();
 }
 
-void drawAxis() {
-  stroke(#96D8F0);
-  strokeWeight(1);
-  for (int i = -2000*map.width; i <= 2000*map.width; i+=100) {
-    line(i, 0, -2000*map.width, i, 0, 2000*map.width);
-    line(-2000*map.width, 0, i, 2000*map.width, 0, i);
-
-    line(i, height, -2000*map.width, i, height, 2000*map.width);
-    line(-2000*map.width, height, i, 2000*map.width, height, i);
+void drawPlain() {
+  int x = 0, y = 0;
+  while (y <= gridSize*map.height) {
+    block(x, -gridSize, y, sc, gridSize);
+    block(x, height, y, sc, gridSize);
+    x += gridSize;
+    if (x >= gridSize*map.width) {
+      x = 0;
+      y += gridSize;
+    }
   }
 }
 
 void controlCamera() {
-  if (w) { 
+  if (w) {
     eyeX = eyeX + cos(h_head_angle)*10;
     eyeZ = eyeZ + sin(h_head_angle)*10;
   }
@@ -130,7 +142,7 @@ void controlCamera() {
   focusZ = eyeZ + sin(h_head_angle)*300;
 
   if (mouseX > width-2) {
-    rbt.mouseMove(1, mouseY); 
+    rbt.mouseMove(1, mouseY);
     skipFrame = true;
   } else if (mouseX < 1) {
     rbt.mouseMove(width-2, mouseY);
@@ -138,7 +150,7 @@ void controlCamera() {
   } else skipFrame = false;
 }
 
-void keyPressed() { 
+void keyPressed() {
   if (key == 'w' || key == 'W') w = true;
   if (key == 's' || key == 'S') s = true;
   if (key == 'a' || key == 'A') a = true;
